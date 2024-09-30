@@ -7,7 +7,7 @@ load_dotenv(".env")
 
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 
-def upload_file(bucket_name: str, file_name: str):
+def upload_file(bucket_name: str, file_path: str):
     # Create Cloud Storage client
     client = storage.Client() # TODO: Verify if its necessary use a Service Account
 
@@ -15,10 +15,11 @@ def upload_file(bucket_name: str, file_name: str):
     bucket = client.get_bucket(bucket_name)
 
     # Create a BLOB (Binary Large Object) object from the file
+    file_name = file_path.replace("\\", "/").split("/")[-1]
     blob = bucket.blob(file_name)
 
     # Upload the file
-    blob.upload_from_filename(file_name)
+    blob.upload_from_filename(file_path)
     print(f"File {file_name} uploaded to {blob.public_url}")
 
 def rename_file(bucket_name: str, old_name: str, new_name:str):
@@ -60,16 +61,18 @@ def delete_file(bucket_name:str, file_name:str):
     # Delete the file from the Bucket
     blob.delete()
 
-def push_to_cloud_storage(bucket_name:str, file_name:str):
-    # Verify if the file exists
+def push_to_cloud_storage(bucket_name:str, file_path:str):
+    # Verify if the file exists}
+    file_name = file_path.replace("\\", "/").split("/")[-1]
     exists = check_file_existence(bucket_name, file_name)
     if not exists:
-        upload_file(bucket_name, file_name)
+        upload_file(bucket_name, file_path)
         return 
     # If exists rename it and upload the last version
-    deprecated_file = file_name + "-deprecated"
+    name, extension = file_name.split(".")
+    deprecated_file = name + "-deprecated." + extension
     if check_file_existence(bucket_name, deprecated_file):
         delete_file(bucket_name, deprecated_file)
     rename_file(bucket_name, file_name, deprecated_file)
-    upload_file(bucket_name, file_name)
+    upload_file(bucket_name, file_path)
     
